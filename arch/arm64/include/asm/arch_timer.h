@@ -25,6 +25,7 @@
 #include <linux/bug.h>
 #include <linux/init.h>
 #include <linux/jump_label.h>
+#include <linux/smp.h>
 #include <linux/types.h>
 
 #include <clocksource/arm_arch_timer.h>
@@ -55,7 +56,8 @@ struct arch_timer_erratum_workaround {
 	int (*set_next_event_virt)(unsigned long, struct clock_event_device *);
 };
 
-extern const struct arch_timer_erratum_workaround *timer_unstable_counter_workaround;
+DECLARE_PER_CPU(const struct arch_timer_erratum_workaround *,
+		timer_unstable_counter_workaround);
 
 #define arch_timer_reg_read_stable(reg) 		\
 ({							\
