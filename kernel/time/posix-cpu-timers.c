@@ -286,7 +286,7 @@ static int cpu_clock_sample_group(const clockid_t which_clock,
 
 static int posix_cpu_clock_get_task(struct task_struct *tsk,
 				    const clockid_t which_clock,
-				    struct timespec *tp)
+				    struct timespec64 *tp)
 {
 	int err = -EINVAL;
 	unsigned long long rtn;
@@ -300,13 +300,13 @@ static int posix_cpu_clock_get_task(struct task_struct *tsk,
 	}
 
 	if (!err)
-		sample_to_timespec(which_clock, rtn, tp);
+		*tp = ns_to_timespec64(rtn);
 
 	return err;
 }
 
 
-static int posix_cpu_clock_get(const clockid_t which_clock, struct timespec *tp)
+static int posix_cpu_clock_get(const clockid_t which_clock, struct timespec64 *tp)
 {
 	const pid_t pid = CPUCLOCK_PID(which_clock);
 	int err = -EINVAL;
@@ -1419,7 +1419,7 @@ static int process_cpu_clock_getres(const clockid_t which_clock,
 	return posix_cpu_clock_getres(PROCESS_CLOCK, tp);
 }
 static int process_cpu_clock_get(const clockid_t which_clock,
-				 struct timespec *tp)
+				 struct timespec64 *tp)
 {
 	return posix_cpu_clock_get(PROCESS_CLOCK, tp);
 }
@@ -1444,7 +1444,7 @@ static int thread_cpu_clock_getres(const clockid_t which_clock,
 	return posix_cpu_clock_getres(THREAD_CLOCK, tp);
 }
 static int thread_cpu_clock_get(const clockid_t which_clock,
-				struct timespec *tp)
+				struct timespec64 *tp)
 {
 	return posix_cpu_clock_get(THREAD_CLOCK, tp);
 }
