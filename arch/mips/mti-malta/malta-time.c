@@ -237,6 +237,7 @@ void __init plat_time_init(void)
 		       (freq%1000000)*100/1000000);
 #ifdef CONFIG_CLKSRC_MIPS_GIC
 		gic_clocksource_init(gic_frequency);
+		timer_probe();
 #endif
 	}
 #endif
