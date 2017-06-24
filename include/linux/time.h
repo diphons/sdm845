@@ -12,6 +12,10 @@ int get_timespec64(struct timespec64 *ts,
 		const struct timespec __user *uts);
 int put_timespec64(const struct timespec64 *ts,
 		struct timespec __user *uts);
+int get_itimerspec64(struct itimerspec64 *it,
+			const struct itimerspec __user *uit);
+int put_itimerspec64(const struct itimerspec64 *it,
+			struct itimerspec __user *uit);
 
 #define TIME_T_MAX	(time_t)((1UL << ((sizeof(time_t) << 3) - 1)) - 1)
 
@@ -280,6 +284,15 @@ static __always_inline void timespec_add_ns(struct timespec *a, u64 ns)
 	a->tv_nsec = ns;
 }
 
+static inline bool itimerspec64_valid(const struct itimerspec64 *its)
+{
+	if (!timespec64_valid(&(its->it_interval)) ||
+		!timespec64_valid(&(its->it_value)))
+		return false;
+
+	return true;
+}
+
 /**
  * time_between32 - check if a 32-bit timestamp is within a given time range
  * @t:	the time which may be within [l,h]
@@ -292,4 +305,5 @@ static __always_inline void timespec_add_ns(struct timespec *a, u64 ns)
  * Equivalent to !(time_before32(@t, @l) || time_after32(@t, @h)).
  */
 #define time_between32(t, l, h) ((u32)(h) - (u32)(l) >= (u32)(t) - (u32)(l))
+
 #endif
