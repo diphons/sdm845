@@ -2093,9 +2093,7 @@ static int serial_imx_probe(struct platform_device *pdev)
 	sport->port.rs485.flags =
 		SER_RS485_RTS_ON_SEND | SER_RS485_RX_DURING_TX;
 	sport->port.flags = UPF_BOOT_AUTOCONF;
-	init_timer(&sport->timer);
-	sport->timer.function = imx_timeout;
-	sport->timer.data     = (unsigned long)sport;
+	setup_timer(&sport->timer, imx_timeout, (unsigned long)sport);
 
 	sport->gpios = mctrl_gpio_init(&sport->port, 0);
 	if (IS_ERR(sport->gpios))
