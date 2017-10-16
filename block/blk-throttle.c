@@ -149,7 +149,7 @@ struct throtl_data
 	struct work_struct dispatch_work;
 };
 
-static void throtl_pending_timer_fn(unsigned long arg);
+static void throtl_pending_timer_fn(struct timer_list *t);
 
 static inline struct throtl_grp *pd_to_tg(struct blkg_policy_data *pd)
 {
@@ -313,8 +313,7 @@ static void throtl_service_queue_init(struct throtl_service_queue *sq)
 	INIT_LIST_HEAD(&sq->queued[0]);
 	INIT_LIST_HEAD(&sq->queued[1]);
 	sq->pending_tree = RB_ROOT;
-	setup_timer(&sq->pending_timer, throtl_pending_timer_fn,
-		    (unsigned long)sq);
+	timer_setup(&sq->pending_timer, throtl_pending_timer_fn, 0);
 }
 
 static struct blkg_policy_data *throtl_pd_alloc(gfp_t gfp, int node)
@@ -1023,9 +1022,9 @@ static int throtl_select_dispatch(struct throtl_service_queue *parent_sq)
  * the top-level service_tree is reached, throtl_data->dispatch_work is
  * kicked so that the ready bio's are issued.
  */
-static void throtl_pending_timer_fn(unsigned long arg)
+static void throtl_pending_timer_fn(struct timer_list *t)
 {
-	struct throtl_service_queue *sq = (void *)arg;
+	struct throtl_service_queue *sq = from_timer(sq, t, pending_timer);
 	struct throtl_grp *tg = sq_to_tg(sq);
 	struct throtl_data *td = sq_to_td(sq);
 	struct request_queue *q = td->queue;

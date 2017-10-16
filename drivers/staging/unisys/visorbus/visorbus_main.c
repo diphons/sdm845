@@ -435,10 +435,9 @@ static const struct attribute_group *visorbus_groups[] = {
 		NULL
 };
 
-static void
-dev_periodic_work(unsigned long __opaque)
+static void dev_periodic_work(struct timer_list *t)
 {
-	struct visor_device *dev = (struct visor_device *)__opaque;
+	struct visor_device *dev = from_timer(dev, t, timer);
 	struct visor_driver *drv = to_visor_driver(dev->device.driver);
 
 	if (drv->channel_interrupt)
@@ -620,10 +619,8 @@ create_visor_device(struct visor_device *dev)
 	dev->device.release = visorbus_release_device;
 	/* keep a reference just for us (now 2) */
 	get_device(&dev->device);
-	init_timer(&dev->timer);
-	dev->timer.data = (unsigned long)(dev);
-	dev->timer.function = dev_periodic_work;
 
+	timer_setup(&dev->timer, dev_periodic_work, 0);
 	/*
 	 * bus_id must be a unique name with respect to this bus TYPE
 	 * (NOT bus instance).  That's why we need to include the bus

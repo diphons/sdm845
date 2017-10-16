@@ -956,10 +956,9 @@ static void skd_request_fn_not_online(struct request_queue *q)
 
 static void skd_timer_tick_not_online(struct skd_device *skdev);
 
-static void skd_timer_tick(ulong arg)
+static void skd_timer_tick(struct timer_list *t)
 {
-	struct skd_device *skdev = (struct skd_device *)arg;
-
+	struct skd_device *skdev = from_timer(skdev, t, timer);
 	u32 timo_slot;
 	u32 overdue_timestamp;
 	unsigned long reqflags;
@@ -1160,8 +1159,7 @@ static int skd_start_timer(struct skd_device *skdev)
 {
 	int rc;
 
-	init_timer(&skdev->timer);
-	setup_timer(&skdev->timer, skd_timer_tick, (ulong)skdev);
+	timer_setup(&skdev->timer, skd_timer_tick, 0);
 
 	rc = mod_timer(&skdev->timer, (jiffies + HZ));
 	if (rc)

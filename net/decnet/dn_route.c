@@ -188,7 +188,7 @@ static inline void dnrt_free(struct dn_route *rt)
 	call_rcu_bh(&rt->dst.rcu_head, dst_rcu_free);
 }
 
-static void dn_dst_check_expire(unsigned long dummy)
+static void dn_dst_check_expire(struct timer_list *unused)
 {
 	int i;
 	struct dn_route *rt;
@@ -1873,7 +1873,7 @@ void __init dn_route_init(void)
 		kmem_cache_create("dn_dst_cache", sizeof(struct dn_route), 0,
 				  SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 	dst_entries_init(&dn_dst_ops);
-	setup_timer(&dn_route_timer, dn_dst_check_expire, 0);
+	timer_setup(&dn_route_timer, dn_dst_check_expire, 0);
 	dn_route_timer.expires = jiffies + decnet_dst_gc_interval * HZ;
 	add_timer(&dn_route_timer);
 

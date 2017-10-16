@@ -2619,9 +2619,9 @@ static void ena_update_host_info(struct ena_admin_host_info *host_info,
 		(netdev->features & GENMASK_ULL(63, 32)) >> 32;
 }
 
-static void ena_timer_service(unsigned long data)
+static void ena_timer_service(struct timer_list *t)
 {
-	struct ena_adapter *adapter = (struct ena_adapter *)data;
+	struct ena_adapter *adapter = from_timer(adapter, t, timer_service);
 	u8 *debug_area = adapter->ena_dev->host_attr.debug_area_virt_addr;
 	struct ena_admin_host_info *host_info =
 		adapter->ena_dev->host_attr.host_info;
@@ -3036,12 +3036,8 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	adapter->last_keep_alive_jiffies = jiffies;
 
-	init_timer(&adapter->timer_service);
-	adapter->timer_service.expires = round_jiffies(jiffies + HZ);
-	adapter->timer_service.function = ena_timer_service;
-	adapter->timer_service.data = (unsigned long)adapter;
-
-	add_timer(&adapter->timer_service);
+	timer_setup(&adapter->timer_service, ena_timer_service, 0);
+	mod_timer(&adapter->timer_service, round_jiffies(jiffies + HZ));
 
 	dev_info(&pdev->dev, "%s found at mem %lx, mac addr %pM Queues %d\n",
 		 DEVICE_NAME, (long)pci_resource_start(pdev, 0),

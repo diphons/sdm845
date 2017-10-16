@@ -65,9 +65,9 @@ struct kmem_cache *rxrpc_call_jar;
 LIST_HEAD(rxrpc_calls);
 DEFINE_RWLOCK(rxrpc_call_lock);
 
-static void rxrpc_call_timer_expired(unsigned long _call)
+static void rxrpc_call_timer_expired(struct timer_list *t)
 {
-	struct rxrpc_call *call = (struct rxrpc_call *)_call;
+	struct rxrpc_call *call = from_timer(call, t, timer);
 
 	_enter("%d", call->debug_id);
 
@@ -133,8 +133,7 @@ struct rxrpc_call *rxrpc_alloc_call(gfp_t gfp)
 	if (!call->rxtx_annotations)
 		goto nomem_2;
 
-	setup_timer(&call->timer, rxrpc_call_timer_expired,
-		    (unsigned long)call);
+	timer_setup(&call->timer, rxrpc_call_timer_expired, 0);
 	INIT_WORK(&call->processor, &rxrpc_process_call);
 	INIT_LIST_HEAD(&call->link);
 	INIT_LIST_HEAD(&call->chan_wait_link);

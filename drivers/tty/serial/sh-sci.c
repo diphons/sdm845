@@ -1353,9 +1353,9 @@ static void work_fn_tx(struct work_struct *work)
 	dma_async_issue_pending(chan);
 }
 
-static void rx_timer_fn(unsigned long arg)
+static void rx_timer_fn(struct timer_list *t)
 {
-	struct sci_port *s = (struct sci_port *)arg;
+	struct sci_port *s = from_timer(s, t, rx_timer);
 	struct dma_chan *chan = s->chan_rx;
 	struct uart_port *port = &s->port;
 	struct dma_tx_state state;
@@ -1535,7 +1535,7 @@ static void sci_request_dma(struct uart_port *port)
 			dma += s->buf_len_rx;
 		}
 
-		setup_timer(&s->rx_timer, rx_timer_fn, (unsigned long)s);
+		timer_setup(&s->rx_timer, rx_timer_fn, 0);
 
 		if (port->type == PORT_SCIFA || port->type == PORT_SCIFB)
 			sci_submit_rx(s);

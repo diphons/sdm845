@@ -80,7 +80,7 @@ static const char	hcd_name [] = "ohci_hcd";
 
 static void ohci_dump(struct ohci_hcd *ohci);
 static void ohci_stop(struct usb_hcd *hcd);
-static void io_watchdog_func(unsigned long _ohci);
+static void io_watchdog_func(struct timer_list *t);
 
 #include "ohci-hub.c"
 #include "ohci-dbg.c"
@@ -510,8 +510,7 @@ static int ohci_init (struct ohci_hcd *ohci)
 	if (ohci->hcca)
 		return 0;
 
-	setup_timer(&ohci->io_watchdog, io_watchdog_func,
-			(unsigned long) ohci);
+	timer_setup(&ohci->io_watchdog, io_watchdog_func, 0);
 	ohci->prev_frame_no = IO_WATCHDOG_OFF;
 
 	ohci->hcca = dma_alloc_coherent (hcd->self.controller,
@@ -738,9 +737,9 @@ static int ohci_start(struct usb_hcd *hcd)
  * the unlink list.  As a result, URBs could never be dequeued and
  * endpoints could never be released.
  */
-static void io_watchdog_func(unsigned long _ohci)
+static void io_watchdog_func(struct timer_list *t)
 {
-	struct ohci_hcd	*ohci = (struct ohci_hcd *) _ohci;
+	struct ohci_hcd	*ohci = from_timer(ohci, t, io_watchdog);
 	bool		takeback_all_pending = false;
 	u32		status;
 	u32		head;

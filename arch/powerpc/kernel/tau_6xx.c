@@ -161,7 +161,7 @@ static void tau_timeout(void * info)
 	mtspr(SPRN_THRM3, THRM3_SITV(0x1fff) | THRM3_E);
 }
 
-static void tau_timeout_smp(unsigned long unused)
+static void tau_timeout_smp(struct timer_list *unused)
 {
 
 	/* schedule ourselves to be run again */
@@ -203,7 +203,7 @@ int __init TAU_init(void)
 
 
 	/* first, set up the window shrinking timer */
-	setup_timer(&tau_timer, tau_timeout_smp, 0UL);
+	timer_setup(&tau_timer, tau_timeout_smp, 0);
 	tau_timer.expires = jiffies + shrink_timer;
 	add_timer(&tau_timer);
 

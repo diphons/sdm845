@@ -1670,10 +1670,10 @@ static int visornic_poll(struct napi_struct *napi, int budget)
  *	response queue and drain it if needed.
  *	Returns when thread has stopped.
  */
-static void
-poll_for_irq(unsigned long v)
+static void poll_for_irq(struct timer_list *t)
 {
-	struct visornic_devdata *devdata = (struct visornic_devdata *)v;
+	struct visornic_devdata *devdata = from_timer(devdata, t,
+						      irq_poll_timer);
 
 	if (!visorchannel_signalempty(
 				   devdata->dev->visorchannel,
@@ -1805,8 +1805,7 @@ static int visornic_probe(struct visor_device *dev)
 	/* Let's start our threads to get responses */
 	netif_napi_add(netdev, &devdata->napi, visornic_poll, 64);
 
-	setup_timer(&devdata->irq_poll_timer, poll_for_irq,
-		    (unsigned long)devdata);
+	timer_setup(&devdata->irq_poll_timer, poll_for_irq, 0);
 	/* Note: This time has to start running before the while
 	 * loop below because the napi routine is responsible for
 	 * setting enab_dis_acked

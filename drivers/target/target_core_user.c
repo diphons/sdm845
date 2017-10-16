@@ -731,9 +731,9 @@ static int tcmu_check_expired_cmd(int id, void *p, void *data)
 	return 0;
 }
 
-static void tcmu_device_timedout(unsigned long data)
+static void tcmu_device_timedout(struct timer_list *t)
 {
-	struct tcmu_dev *udev = (struct tcmu_dev *)data;
+	struct tcmu_dev *udev = from_timer(udev, t, timeout);
 	unsigned long flags;
 	int handled;
 
@@ -793,8 +793,7 @@ static struct se_device *tcmu_alloc_device(struct se_hba *hba, const char *name)
 	idr_init(&udev->commands);
 	spin_lock_init(&udev->commands_lock);
 
-	setup_timer(&udev->timeout, tcmu_device_timedout,
-		(unsigned long)udev);
+	timer_setup(&udev->timeout, tcmu_device_timedout, 0);
 
 	return &udev->se_dev;
 }
