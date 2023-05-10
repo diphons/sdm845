@@ -366,10 +366,8 @@ LD		= $(CROSS_COMPILE)ld
 CC		= $(CROSS_COMPILE)gcc
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
-LLVMNM		= llvm-nm
 STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
-LLVMOBJCOPY	= llvm-objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 endif
 AWK		= awk
@@ -551,6 +549,7 @@ CLANG_FLAGS	+= $(call cc-option, -Wno-bool-operation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-unsequenced)
 KBUILD_CFLAGS	+= $(CLANG_FLAGS)
 KBUILD_AFLAGS	+= $(CLANG_FLAGS)
+export CLANG_FLAGS
 ifeq ($(ld-name),lld)
 KBUILD_CFLAGS	+= -fuse-ld=lld
 endif
@@ -677,21 +676,13 @@ export CFLAGS_GCOV CFLAGS_KCOV
 
 # Make toolchain changes before including arch/$(SRCARCH)/Makefile to ensure
 # ar/cc/ld-* macros return correct values.
-ifdef CONFIG_LD_GOLD
+ifdef CONFIG_LTO_CLANG
+ifneq ($(ld-name),lld)
+# use GNU gold with LLVMgold for LTO linking, and LD for vmlinux_link
 LDFINAL_vmlinux := $(LD)
 LD		:= $(LDGOLD)
-endif
-ifdef CONFIG_LD_LLD
-LD		:= $(LDLLD)
-endif
-
-ifdef CONFIG_LTO_CLANG
-# use GNU gold with LLVMgold or LLD for LTO linking, and LD for vmlinux_link
-ifeq ($(ld-name),gold)
 LDFLAGS		+= -plugin LLVMgold.so
 endif
-LDFLAGS		+= -plugin-opt=-function-sections
-LDFLAGS		+= -plugin-opt=-data-sections
 # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
 # of objdump for processing symbol versions and exports
 LLVM_AR		:= llvm-ar
@@ -786,15 +777,19 @@ else
 KBUILD_CFLAGS   += -O3
 endif
 
-ifeq ($(cc-name),gcc)
-KBUILD_CFLAGS	+= -mcpu=cortex-a75.cortex-a55 -mtune=cortex-a75.cortex-a55
-endif
-ifeq ($(cc-name),clang)
-KBUILD_CFLAGS	+= -mcpu=cortex-a55 -mtune=cortex-a55
-endif
-
 ifdef CONFIG_CC_WERROR
 KBUILD_CFLAGS	+= -Werror
+endif
+
+ifdef CONFIG_LLVM_POLLY
+KBUILD_CFLAGS	+= -mllvm -polly \
+		   -mllvm -polly-run-inliner \
+		   -mllvm -polly-ast-use-context \
+		   -mllvm -polly-detect-keep-going \
+           -mllvm -polly-position=before-vectorizer \
+		   -mllvm -polly-vectorizer=stripmine \
+           -mllvm -polly-detect-profitability-min-per-loop-insts=40 \
+		   -mllvm -polly-invariant-load-hoisting
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
@@ -1034,9 +1029,6 @@ endif
 
 ifeq ($(CONFIG_RELR),y)
 LDFLAGS_vmlinux	+= --pack-dyn-relocs=relr
-OBJCOPY	:= $(LLVMOBJCOPY)
-NM	:= $(LLVMNM)
-export OBJCOPY NM
 endif
 
 # Default kernel image to build when no specific target is given.

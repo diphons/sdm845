@@ -84,12 +84,20 @@ endif
 
 KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr) $(vdso32)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
+ifeq ($(CONFIG_ARM64_ERRATUM_843419),y)
 KBUILD_CFLAGS	+= $(call cc-option, -mpc-relative-literal-loads)
+endif
 KBUILD_CFLAGS	+= -fno-pic
 KBUILD_AFLAGS	+= $(lseinstr) $(vdso32)
 
 KBUILD_CFLAGS	+= $(call cc-option,-mabi=lp64)
 KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
+
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS	+= -DCONFIG_ARCH_SUPPORTS_INT128
+else
+KBUILD_CFLAGS	+= $(call cc-ifversion, -ge, 0500, -DCONFIG_ARCH_SUPPORTS_INT128)
+endif
 
 ifeq ($(CONFIG_SHADOW_CALL_STACK), y)
 KBUILD_CFLAGS	+= -ffixed-x18
@@ -107,25 +115,6 @@ AS		+= -EL
 # Same as above, prefer ELF but fall back to linux target if needed.
 LDFLAGS		+= -EL $(call ld-option, -maarch64elf, -maarch64linux)
 UTS_MACHINE	:= aarch64
-endif
-
-# SDM845 Optimization
-ifeq ($(cc-name),clang)
-KBUILD_CFLAGS	+=	$(call cc-option,-mcpu=cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a55,)
-
-KBUILD_AFLAGS	+=	$(call cc-option,-mcpu=cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a55,)
-else
-KBUILD_CFLAGS	+=	$(call cc-option,-mcpu=cortex-a75.cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a75.cortex-a55,)
-
-KBUILD_AFLAGS	+=	$(call cc-option,-mcpu=cortex-a75.cortex-a55,) \
-					$(call cc-option,-march=armv8.2-a,) \
-					$(call cc-option,-mtune=cortex-a75.cortex-a55,)
 endif
 
 CHECKFLAGS	+= -D__aarch64__
