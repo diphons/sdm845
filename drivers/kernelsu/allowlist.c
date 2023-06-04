@@ -176,6 +176,7 @@ bool ksu_set_app_profile(struct app_profile *profile, bool persist)
 	list_add_tail(&p->list, &allow_list);
 	result = true;
 
+exit:
 	// check if the default profiles is changed, cache it to a single struct to accelerate access.
 	if (unlikely(!strcmp(profile->key, "$"))) {
 		// set default non root profile
@@ -188,7 +189,7 @@ bool ksu_set_app_profile(struct app_profile *profile, bool persist)
 		memcpy(&default_root_profile, &profile->rp_config.profile,
 		       sizeof(default_root_profile));
 	}
-exit:
+
 	if (persist)
 		persistent_allow_list();
 
