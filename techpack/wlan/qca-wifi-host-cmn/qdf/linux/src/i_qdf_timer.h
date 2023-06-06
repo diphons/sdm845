@@ -40,7 +40,7 @@ struct __qdf_timer_t {
 	void *context;
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static inline void __os_timer_shim(struct timer_list *os_timer)
 {
 	struct __qdf_timer_t *timer = from_timer(timer, os_timer, os_timer);

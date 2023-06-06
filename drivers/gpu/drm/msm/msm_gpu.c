@@ -235,9 +235,9 @@ static void inactive_worker(struct work_struct *work)
 	mutex_unlock(&dev->struct_mutex);
 }
 
-static void inactive_handler(unsigned long data)
+static void inactive_handler(struct timer_list *t)
 {
-	struct msm_gpu *gpu = (struct msm_gpu *)data;
+	struct msm_gpu *gpu = from_timer(gpu, t, inactive_timer);
 	struct msm_drm_private *priv = gpu->dev->dev_private;
 
 	queue_work(priv->wq, &gpu->inactive_work);

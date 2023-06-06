@@ -1087,7 +1087,7 @@ static void msm_lastclose(struct drm_device *dev)
 		struct timer_list *disable_timer = &vblank->disable_timer;
 
 		if (del_timer_sync(disable_timer))
-			disable_timer->function(disable_timer->data);
+			disable_timer->function(disable_timer);
 	}
 
 	/* wait for pending vblank requests to be executed by worker thread */

@@ -76,9 +76,9 @@ static void est_fetch_counters(struct net_rate_estimator *e,
 
 }
 
-static void est_timer(unsigned long arg)
+static void est_timer(struct timer_list *t)
 {
-	struct net_rate_estimator *est = (struct net_rate_estimator *)arg;
+	struct net_rate_estimator *est = from_timer(est, t, timer);
 	struct gnet_stats_basic_packed b;
 	u64 rate, brate;
 
@@ -103,7 +103,6 @@ static void est_timer(unsigned long arg)
 		/* Ouch... timer was delayed. */
 		est->next_jiffies = jiffies + 1;
 	}
-
 	mod_timer(&est->timer, est->next_jiffies);
 }
 
@@ -170,18 +169,9 @@ int gen_new_estimator(struct gnet_stats_basic_packed *bstats,
 		est->avpps = old->avpps;
 	}
 
-<<<<<<< HEAD
-	if (list_empty(&elist[idx].list))
-		mod_timer(&elist[idx].timer, jiffies + ((HZ/4) << idx));
-
-	list_add_rcu(&est->list, &elist[idx].list);
-	gen_add_node(est);
-	spin_unlock_bh(&est_tree_lock);
-=======
 	est->next_jiffies = jiffies + ((HZ/4) << intvl_log);
-	setup_timer(&est->timer, est_timer, (unsigned long)est);
+	timer_setup(&est->timer, est_timer, 0);
 	mod_timer(&est->timer, est->next_jiffies);
->>>>>>> 1c0d32fde5bd (net_sched: gen_estimator: complete rewrite of rate estimators)
 
 	rcu_assign_pointer(*rate_est, est);
 	if (old)

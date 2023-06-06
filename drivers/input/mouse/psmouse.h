@@ -41,6 +41,8 @@ enum psmouse_scale {
 	PSMOUSE_SCALE21
 };
 
+struct psmouse;
+
 struct psmouse {
 	void *private;
 	struct input_dev *dev;

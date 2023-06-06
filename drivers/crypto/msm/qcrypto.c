@@ -672,17 +672,16 @@ static void qcrypto_ce_set_bus(struct crypto_engine *pengine,
 	}
 }
 
-static void qcrypto_bw_reaper_timer_callback(unsigned long data)
+static void qcrypto_bw_reaper_timer_callback(struct timer_list *data)
 {
-	struct crypto_engine *pengine = (struct crypto_engine *)data;
+	struct crypto_engine *pengine = from_timer(pengine, data,
+		bw_reaper_timer);
 
 	schedule_work(&pengine->bw_reaper_ws);
 }
 
 static void qcrypto_bw_set_timeout(struct crypto_engine *pengine)
 {
-	pengine->bw_reaper_timer.data =
-			(unsigned long)(pengine);
 	pengine->bw_reaper_timer.expires = jiffies +
 			msecs_to_jiffies(QCRYPTO_HIGH_BANDWIDTH_TIMEOUT);
 	mod_timer(&(pengine->bw_reaper_timer),
@@ -4968,10 +4967,9 @@ static int  _qcrypto_probe(struct platform_device *pdev)
 	pengine->pdev = pdev;
 	pengine->signature = 0xdeadbeef;
 
-	init_timer(&(pengine->bw_reaper_timer));
+	timer_setup(&(pengine->bw_reaper_timer),
+			qcrypto_bw_reaper_timer_callback, 0);
 	INIT_WORK(&pengine->bw_reaper_ws, qcrypto_bw_reaper_work);
-	pengine->bw_reaper_timer.function =
-			qcrypto_bw_reaper_timer_callback;
 	INIT_WORK(&pengine->bw_allocate_ws, qcrypto_bw_allocate_work);
 	pengine->high_bw_req = false;
 	pengine->active_seq = 0;

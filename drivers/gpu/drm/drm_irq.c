@@ -303,9 +303,9 @@ static void vblank_disable_and_save(struct drm_device *dev, unsigned int pipe)
 	spin_unlock_irqrestore(&dev->vblank_time_lock, irqflags);
 }
 
-static void vblank_disable_fn(unsigned long arg)
+static void vblank_disable_fn(struct timer_list *t)
 {
-	struct drm_vblank_crtc *vblank = (void *)arg;
+	struct drm_vblank_crtc *vblank = from_timer(vblank, t, disable_timer);
 	struct drm_device *dev = vblank->dev;
 	unsigned int pipe = vblank->pipe;
 	unsigned long irqflags;
@@ -377,8 +377,7 @@ int drm_vblank_init(struct drm_device *dev, unsigned int num_crtcs)
 		vblank->dev = dev;
 		vblank->pipe = i;
 		init_waitqueue_head(&vblank->queue);
-		setup_timer(&vblank->disable_timer, vblank_disable_fn,
-			    (unsigned long)vblank);
+		timer_setup(&vblank->disable_timer, vblank_disable_fn, 0);
 		seqlock_init(&vblank->seqlock);
 	}
 
@@ -1203,7 +1202,7 @@ static void drm_vblank_put(struct drm_device *dev, unsigned int pipe)
 		if (drm_vblank_offdelay == 0)
 			return;
 		else if (drm_vblank_offdelay < 0)
-			vblank_disable_fn((unsigned long)vblank);
+			vblank_disable_fn(&vblank->disable_timer);
 		else if (!dev->vblank_disable_immediate)
 			mod_timer(&vblank->disable_timer,
 				  jiffies + ((drm_vblank_offdelay * HZ)/1000));
@@ -1827,7 +1826,7 @@ bool drm_handle_vblank(struct drm_device *dev, unsigned int pipe)
 	if (dev->vblank_disable_immediate &&
 	    drm_vblank_offdelay > 0 &&
 	    !atomic_read(&vblank->refcount))
-		vblank_disable_fn((unsigned long)vblank);
+		vblank_disable_fn(&vblank->disable_timer);
 
 	spin_unlock_irqrestore(&dev->event_lock, irqflags);
 

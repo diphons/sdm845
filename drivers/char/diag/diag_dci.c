@@ -189,7 +189,7 @@ static void create_dci_event_mask_tbl(unsigned char *tbl_buf)
 		memset(tbl_buf, 0, DCI_EVENT_MASK_SIZE);
 }
 
-void dci_drain_data(unsigned long data)
+void dci_drain_data(struct timer_list *tlist)
 {
 	queue_work(driver->diag_dci_wq, &dci_data_drain_work);
 }
@@ -240,15 +240,20 @@ static void dci_handshake_work_fn(struct work_struct *work)
 		  jiffies + msecs_to_jiffies(DCI_HANDSHAKE_WAIT_TIME));
 }
 
-static void dci_chk_handshake(unsigned long data)
+static void dci_chk_handshake(struct timer_list *tlist)
 {
-	int index = (int)data;
+	int index;
+	struct dci_channel_status_t *status = container_of(tlist,
+						struct dci_channel_status_t,
+						wait_time);
 
+	if (!status)
+		return;
+
+	index = status->id;
 	if (index < 0 || index >= NUM_DCI_PROC)
 		return;
 
-	queue_work(driver->diag_dci_wq,
-		   &dci_channel_status[index].handshake_work);
 }
 #endif
 
@@ -2780,8 +2785,8 @@ static void diag_dci_init_handshake_remote(void)
 	for (i = DCI_REMOTE_BASE; i < NUM_DCI_PROC; i++) {
 		temp = &dci_channel_status[i];
 		temp->id = i;
-		setup_timer(&temp->wait_time, dci_chk_handshake, i);
 		INIT_WORK(&temp->handshake_work, dci_handshake_work_fn);
+		timer_setup(&temp->wait_time, dci_chk_handshake, 0);
 	}
 }
 
@@ -2858,7 +2863,7 @@ int diag_dci_init(void)
 
 	INIT_WORK(&dci_data_drain_work, dci_data_drain_work_fn);
 
-	setup_timer(&dci_drain_timer, dci_drain_data, 0);
+	timer_setup(&dci_drain_timer, dci_drain_data, 0);
 	return DIAG_DCI_NO_ERROR;
 err:
 	pr_err("diag: Could not initialize diag DCI buffers");

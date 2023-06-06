@@ -241,13 +241,14 @@ nomem:
 /* When the T3-RTX timer expires, it calls this function to create the
  * relevant state machine event.
  */
-void sctp_generate_t3_rtx_event(unsigned long peer)
+void sctp_generate_t3_rtx_event(struct timer_list *t)
 {
-	int error;
-	struct sctp_transport *transport = (struct sctp_transport *) peer;
+	struct sctp_transport *transport =
+		from_timer(transport, t, T3_rtx_timer);
 	struct sctp_association *asoc = transport->asoc;
 	struct sock *sk = asoc->base.sk;
 	struct net *net = sock_net(sk);
+	int error;
 
 	/* Check whether a task is in the sock.  */
 
@@ -317,55 +318,68 @@ out_unlock:
 	sctp_association_put(asoc);
 }
 
-static void sctp_generate_t1_cookie_event(unsigned long data)
+static void sctp_generate_t1_cookie_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_T1_COOKIE]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_T1_COOKIE);
 }
 
-static void sctp_generate_t1_init_event(unsigned long data)
+static void sctp_generate_t1_init_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_T1_INIT]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_T1_INIT);
 }
 
-static void sctp_generate_t2_shutdown_event(unsigned long data)
+static void sctp_generate_t2_shutdown_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_T2_SHUTDOWN]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_T2_SHUTDOWN);
 }
 
-static void sctp_generate_t4_rto_event(unsigned long data)
+static void sctp_generate_t4_rto_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_T4_RTO]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_T4_RTO);
 }
 
-static void sctp_generate_t5_shutdown_guard_event(unsigned long data)
+static void sctp_generate_t5_shutdown_guard_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *)data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t,
+			   timers[SCTP_EVENT_TIMEOUT_T5_SHUTDOWN_GUARD]);
+
 	sctp_generate_timeout_event(asoc,
 				    SCTP_EVENT_TIMEOUT_T5_SHUTDOWN_GUARD);
 
 } /* sctp_generate_t5_shutdown_guard_event() */
 
-static void sctp_generate_autoclose_event(unsigned long data)
+static void sctp_generate_autoclose_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_AUTOCLOSE]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_AUTOCLOSE);
 }
 
 /* Generate a heart beat event.  If the sock is busy, reschedule.   Make
  * sure that the transport is still valid.
  */
-void sctp_generate_heartbeat_event(unsigned long data)
+void sctp_generate_heartbeat_event(struct timer_list *t)
 {
-	int error = 0;
-	struct sctp_transport *transport = (struct sctp_transport *) data;
+	struct sctp_transport *transport = from_timer(transport, t, hb_timer);
 	struct sctp_association *asoc = transport->asoc;
 	struct sock *sk = asoc->base.sk;
 	struct net *net = sock_net(sk);
 	u32 elapsed, timeout;
+	int error = 0;
 
 	bh_lock_sock(sk);
 	if (sock_owned_by_user(sk)) {
@@ -403,9 +417,10 @@ out_unlock:
 /* Handle the timeout of the ICMP protocol unreachable timer.  Trigger
  * the correct state machine transition that will close the association.
  */
-void sctp_generate_proto_unreach_event(unsigned long data)
+void sctp_generate_proto_unreach_event(struct timer_list *t)
 {
-	struct sctp_transport *transport = (struct sctp_transport *) data;
+	struct sctp_transport *transport =
+		from_timer(transport, t, proto_unreach_timer);
 	struct sctp_association *asoc = transport->asoc;
 	struct sock *sk = asoc->base.sk;
 	struct net *net = sock_net(sk);
@@ -436,11 +451,12 @@ out_unlock:
 	sctp_transport_put(transport);
 }
 
-
 /* Inject a SACK Timeout event into the state machine.  */
-static void sctp_generate_sack_event(unsigned long data)
+static void sctp_generate_sack_event(struct timer_list *t)
 {
-	struct sctp_association *asoc = (struct sctp_association *) data;
+	struct sctp_association *asoc =
+		from_timer(asoc, t, timers[SCTP_EVENT_TIMEOUT_SACK]);
+
 	sctp_generate_timeout_event(asoc, SCTP_EVENT_TIMEOUT_SACK);
 }
 

@@ -243,9 +243,9 @@ static int gsi_wakeup_host(struct f_gsi *gsi)
 	return ret;
 }
 
-static void gsi_rw_timer_func(unsigned long arg)
+static void gsi_rw_timer_func(struct timer_list *t)
 {
-	struct f_gsi *gsi = (struct f_gsi *)arg;
+	struct f_gsi *gsi = from_timer(gsi, t, gsi_rw_timer);
 
 	if (!atomic_read(&gsi->connected)) {
 		log_event_dbg("%s: gsi not connected.. bail-out\n", __func__);
@@ -3618,7 +3618,7 @@ static struct f_gsi *gsi_function_init(void)
 	gsi->d_port.ipa_usb_wq = ipa_usb_wq;
 
 	gsi->gsi_rw_timer_interval = DEFAULT_RW_TIMER_INTERVAL;
-	setup_timer(&gsi->gsi_rw_timer, gsi_rw_timer_func, (unsigned long) gsi);
+	timer_setup(&gsi->gsi_rw_timer, gsi_rw_timer_func, 0);
 
 	return gsi;
 }

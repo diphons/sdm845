@@ -3879,10 +3879,11 @@ static int _sde_encoder_wakeup_time(struct drm_encoder *drm_enc,
 	return 0;
 }
 
-static void sde_encoder_vsync_event_handler(unsigned long data)
+static void sde_encoder_vsync_event_handler(struct timer_list *t)
 {
-	struct drm_encoder *drm_enc = (struct drm_encoder *) data;
-	struct sde_encoder_virt *sde_enc;
+	struct drm_encoder *drm_enc;
+	struct sde_encoder_virt *sde_enc =
+			from_timer(sde_enc, t, vsync_event_timer);
 	struct msm_drm_private *priv;
 	struct msm_drm_thread *event_thread;
 
@@ -4794,9 +4795,8 @@ struct drm_encoder *sde_encoder_init(
 
 	if ((disp_info->intf_type == DRM_MODE_CONNECTOR_DSI) &&
 			disp_info->is_primary)
-		setup_timer(&sde_enc->vsync_event_timer,
-				sde_encoder_vsync_event_handler,
-				(unsigned long)sde_enc);
+		timer_setup(&sde_enc->vsync_event_timer,
+				sde_encoder_vsync_event_handler, 0);
 
 	snprintf(name, SDE_NAME_SIZE, "rsc_enc%u", drm_enc->base.id);
 	sde_enc->rsc_client = sde_rsc_client_create(SDE_RSC_INDEX, name,

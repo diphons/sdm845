@@ -76,7 +76,7 @@ typedef sctp_disposition_t (sctp_state_fn_t) (struct net *,
 					      const sctp_subtype_t type,
 					      void *arg,
 					      sctp_cmd_seq_t *);
-typedef void (sctp_timer_event_t) (unsigned long);
+typedef void (sctp_timer_event_t) (struct timer_list *);
 typedef struct {
 	sctp_state_fn_t *fn;
 	const char *name;
@@ -273,9 +273,9 @@ int sctp_do_sm(struct net *net, sctp_event_t event_type, sctp_subtype_t subtype,
 	       gfp_t gfp);
 
 /* 2nd level prototypes */
-void sctp_generate_t3_rtx_event(unsigned long peer);
-void sctp_generate_heartbeat_event(unsigned long peer);
-void sctp_generate_proto_unreach_event(unsigned long peer);
+void sctp_generate_t3_rtx_event(struct timer_list *t);
+void sctp_generate_heartbeat_event(struct timer_list *t);
+void sctp_generate_proto_unreach_event(struct timer_list *t);
 
 void sctp_ootb_pkt_free(struct sctp_packet *);
 

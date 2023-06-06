@@ -1480,7 +1480,7 @@ static void qseecom_bw_inactive_req_work(struct work_struct *work)
 	mutex_unlock(&app_access_lock);
 }
 
-static void qseecom_scale_bus_bandwidth_timer_callback(unsigned long data)
+static void qseecom_scale_bus_bandwidth_timer_callback(struct timer_list *data)
 {
 	schedule_work(&qseecom.bw_inactive_req_ws);
 }
@@ -8947,7 +8947,8 @@ static int qseecom_probe(struct platform_device *pdev)
 						pdev->dev.platform_data;
 	}
 	if (qseecom.support_bus_scaling) {
-		init_timer(&(qseecom.bw_scale_down_timer));
+		timer_setup(&(qseecom.bw_scale_down_timer),
+				qseecom_scale_bus_bandwidth_timer_callback, 0);
 		INIT_WORK(&qseecom.bw_inactive_req_ws,
 					qseecom_bw_inactive_req_work);
 		qseecom.bw_scale_down_timer.function =
